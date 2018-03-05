@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"fmt"
 	"encoding/json"
+	"io/ioutil"
 )
 
 func main() {
@@ -74,8 +75,14 @@ func main() {
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+		bytes, err :=  ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("error reading request body: %v", err)
+			return
+		}
+		log.Printf("bytes: %s", bytes)
 		var sr ScoreResult
-		err := json.NewDecoder(r.Body).Decode(&sr)
+		err = json.Unmarshal(bytes, &sr)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Println(w, "error parsing score result: %v", err)
