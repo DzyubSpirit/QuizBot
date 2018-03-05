@@ -51,8 +51,10 @@ func main() {
 			q := u.Query()
 			q.Add("userId", strconv.Itoa(cq.From.ID))
 			q.Add("inlineId", cq.InlineMessageID)
-			q.Add("chatId", cq.ChatInstance)
-			q.Add("messageId", strconv.Itoa(cq.Message.MessageID))
+			if cq.Message != nil {
+				q.Add("chatId", cq.ChatInstance)
+				q.Add("messageId", strconv.Itoa(cq.Message.MessageID))
+			}
 			u.RawQuery = q.Encode()
 			bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{
 				CallbackQueryID: cq.ID,
