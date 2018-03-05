@@ -73,6 +73,7 @@ func main() {
 		Score     int
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		var sr ScoreResult
 		err := json.NewDecoder(r.Body).Decode(&sr)
 		if err != nil {
