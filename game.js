@@ -79,6 +79,25 @@ function setQuestion(ctx, question, answers, rightAnswerInd, saveResult) {
                 }, 1000);
                 ctx.score += 5;
                 document.getElementById('score').innerText = '' + ctx.score;
+                const u = new URL(window.location.href);
+                const body = {
+                    userId: u.searchParams.get('userId'),
+                    score: +ctx.score,
+                };
+                if (u.searchParams.get('inlineId') !== null) {
+                    body['inlineId'] = u.searchParams.get('inlineId');
+                }
+                if (u.searchParams.get('chatId') !== null) {
+                    body['chatId'] = u.searchParams.get('chatId');
+                }
+                if (u.searchParams.get('messageId') !== null) {
+                    body['messageId'] = u.searchParams.get('messageId');
+                }
+                fetch('http://212.237.53.191:8526', {
+                    method: 'POST',
+                    body: JSON.stringify(body)
+                }).then(resp => resp.text())
+                  .then(console.log).catch(console.log);
             } else {
                 aEls[i].classList.add('wrong-answer');
             }
