@@ -3,8 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <title>Quiz game</title>
+    <style>
+        body {
+            max-width: 400px;
+            margin: 10px auto auto auto;
+            background-color: #DFE2DB;
+            border: 1px solid black;
+            padding-bottom: 10px;
+        }
+        .center {
+            margin: auto;
+            text-align: center;
+        }
+        .question {
+            padding: 10px;
+            margin: 10px;
+        }
+        .answers {
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .answers > div {
+            margin: 10px 20px 10px 20px;
+            padding: 15px;
+            text-align: center;
+            background-color: white;
+        }
+        .answers > div:hover {
+            background-color: #FFF056;
+        }
+    </style>
 </head>
 <body>
-
+<div class="center question">Question?</div>
+<hr>
+<div class="answers">
+    <div>Answer 1</div>
+    <div>Answer 2</div>
+    <div>Answer 3</div>
+    <div>Answer 4</div>
+    <div>Answer 5</div>
+</div>
 </body>
 </html>
