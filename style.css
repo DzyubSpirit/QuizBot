@@ -20,6 +20,7 @@ body {
     min-height: 50px;
     font: large 'Berkshire Swash', Helvetica, sans-serif;
     color: white;
+    visibility: hidden;
 }
 
 .timer {
@@ -40,6 +41,7 @@ body {
     justify-content: center;
     width: 300px;
     margin: auto;
+    visibility: hidden;
 }
 
 .answers > div {
