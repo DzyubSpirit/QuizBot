@@ -39,7 +39,7 @@ body {
     flex-wrap: wrap;
     flex-direction: column;
     justify-content: center;
-    width: 300px;
+    width: 20em;
     margin: auto;
     visibility: hidden;
 }
