@@ -8,18 +8,18 @@ function changeGameVisibility(visibility) {
     }
 }
 
-function startTimer(maxSteps, stepTime) {
+function startTimer(maxSteps, stepTime, onTimeout) {
     const timerBar = document.getElementById('timer-bar');
     timerBar.style.width = '100%';
     let i = 0;
     const timer = setInterval(() => {
         i++;
+        timerBar.style.width = Math.round((1 - i / maxSteps) * 100) + '%';
         if (i === maxSteps) {
             clearInterval(timer);
-            clearAnswerOnClicks();
+            onTimeout();
             return;
         }
-        timerBar.style.width = Math.round((1 - i / maxSteps) * 100) + '%';
     }, stepTime);
     return timer;
 }
@@ -54,7 +54,10 @@ function setRandomQuestion(ctx) {
     }
     const rightAnswerInd = Math.floor(Math.random() * 5);
     answers[rightAnswerInd] = books[rightInd];
-    const timer = startTimer(3 * 60, 33);
+    const timer = startTimer(3 * 60, 33, () => {
+        clearAnswerOnClicks();
+        setTimeout(showStartMenu, 3000);
+    });
     setQuestion(ctx, books[ind], answers, rightAnswerInd, (good) => {
         clearInterval(timer);
         if (!good) {
@@ -120,6 +123,7 @@ window.addEventListener('load', () => {
     startButton.addEventListener('click', () => {
         let ctx = {score: 0};
         startButton.style.visibility = 'hidden';
+        document.getElementById("score").innerText = '0';
         setRandomQuestion(ctx);
         changeGameVisibility('visible');
     });
