@@ -38,14 +38,14 @@ body {
     flex-wrap: wrap;
     flex-direction: column;
     justify-content: center;
-    width: 250px;
+    width: 300px;
     margin: auto;
 }
 
 .answers > div {
     padding: 25px;
     text-align: center;
-    font: large 'Berkshire Swash', Helvetica, sans-serif;
+    font: x-large 'Berkshire Swash', Helvetica, sans-serif;
     color: white;
     /*text-shadow: 1px 1px 0 #ededed, 4px 4px 0 rgba(0,0,0,0.15);*/
     /* background-color: white; */
