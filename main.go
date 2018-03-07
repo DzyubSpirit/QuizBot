@@ -10,8 +10,29 @@ import (
 	"fmt"
 	"encoding/json"
 	"io/ioutil"
-"time"
 )
+
+func callbackQuery(bot *tgbotapi.BotAPI, cq *tgbotapi.CallbackQuery) {
+	u, err := url.Parse("http://212.237.53.191:8526/game.html")
+	if err != nil {
+		log.Fatalf("error parsing url: %v", err)
+	}
+
+	q := u.Query()
+	q.Add("userId", strconv.Itoa(cq.From.ID))
+	q.Add("inlineId", cq.InlineMessageID)
+	if cq.Message != nil {
+		q.Add("chatId", cq.ChatInstance)
+		q.Add("messageId", strconv.Itoa(cq.Message.MessageID))
+	}
+	u.RawQuery = q.Encode()
+	bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{
+		CallbackQueryID: cq.ID,
+		URL:             u.String(),
+		Text:            "Hello, dear!",
+		ShowAlert:       true,
+	})
+}
 
 func main() {
 	botToken := flag.String("bot_token", "", "token of the Telegram bot")
@@ -39,31 +60,13 @@ func main() {
 	go func() {
 		for update := range updates {
 			cq := update.CallbackQuery
-			if cq == nil {
-				continue
+			switch {
+			case cq != nil && cq.GameShortName == *gameShortName:
+				callbackQuery(bot, cq)
+			default:
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Play the game: t.me/KICCBibleQuizBot?game=bible_quiz")
+				bot.Send(msg)
 			}
-			if cq.GameShortName != *gameShortName {
-				continue
-			}
-			u, err := url.Parse("http://212.237.53.191:8526/game.html")
-			if err != nil {
-				log.Printf("error parsing url: %v", err)
-				continue
-			}
-			q := u.Query()
-			q.Add("userId", strconv.Itoa(cq.From.ID))
-			q.Add("inlineId", cq.InlineMessageID)
-			if cq.Message != nil {
-				q.Add("chatId", cq.ChatInstance)
-				q.Add("messageId", strconv.Itoa(cq.Message.MessageID))
-			}
-			u.RawQuery = q.Encode()
-			bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{
-				CallbackQueryID: cq.ID,
-				URL:             u.String(),
-				Text:            "Hello, dear!",
-				ShowAlert:       true,
-			})
 		}
 	}()
 
