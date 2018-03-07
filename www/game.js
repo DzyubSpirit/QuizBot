@@ -3,7 +3,6 @@ function changeGameVisibility(visibility) {
     const answer = document.getElementsByClassName("answers")[0];
     const els = [question, answer];
     for (const el of els) {
-        console.log(el);
         el.style.visibility = visibility;
     }
 }
@@ -18,7 +17,6 @@ function startTimer(maxSteps, stepTime, onTimeout) {
         if (i === maxSteps) {
             clearInterval(timer);
             onTimeout();
-            return;
         }
     }, stepTime);
     return timer;
@@ -85,7 +83,7 @@ function setQuestion(ctx, question, answers, rightAnswerInd, saveResult) {
                 document.getElementById('score').innerText = '' + ctx.score;
                 const u = new URL(window.location.href);
                 const body = {
-                    userId: u.searchParams.get('userId'),
+                    userId: +u.searchParams.get('userId'),
                     score: +ctx.score,
                 };
                 if (u.searchParams.get('inlineId') !== null) {
@@ -97,11 +95,13 @@ function setQuestion(ctx, question, answers, rightAnswerInd, saveResult) {
                 if (u.searchParams.get('messageId') !== null) {
                     body['messageId'] = u.searchParams.get('messageId');
                 }
-                fetch('http://212.237.53.191:8526', {
+		console.log('Body: ', JSON.stringify(body));	
+                fetch('/api/', {
                     method: 'POST',
-                    body: JSON.stringify(body)
-                }).then(resp => resp.text())
-                  .then(console.log).catch(console.log);
+                    body: JSON.stringify(body),
+                }).catch((...args) => {
+                     console.log('Result: ', ...args);
+		});
             } else {
                 aEls[i].classList.add('wrong-answer');
             }
