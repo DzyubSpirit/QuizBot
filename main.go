@@ -34,6 +34,14 @@ func callbackQuery(bot *tgbotapi.BotAPI, cq *tgbotapi.CallbackQuery) {
 	})
 }
 
+func sendURL(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	if update.Message == nil || update.Message.Chat == nil {
+		return
+	}
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Play the game: t.me/KICCBibleQuizBot?game=bible_quiz")
+	bot.Send(msg)
+}
+
 func main() {
 	botToken := flag.String("bot_token", "", "token of the Telegram bot")
 	gameShortName := flag.String("game_short_name", "", "short name of telegram game")
@@ -64,8 +72,7 @@ func main() {
 			case cq != nil && cq.GameShortName == *gameShortName:
 				callbackQuery(bot, cq)
 			default:
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Play the game: t.me/KICCBibleQuizBot?game=bible_quiz")
-				bot.Send(msg)
+				sendURL(bot, update)
 			}
 		}
 	}()
