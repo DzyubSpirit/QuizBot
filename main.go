@@ -73,9 +73,9 @@ func main() {
 		MessageID int
 		Score     int
 	}
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		bytes, err :=  ioutil.ReadAll(r.Body)
+		bytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			log.Printf("error reading request body: %v", err)
 			return
@@ -108,5 +108,6 @@ func main() {
 		}
 		fmt.Fprint(w, "Okay")
 	})
-	log.Fatal(http.ListenAndServe(":"+*port, nil))
+	http.Handle("/", http.FileServer(http.Dir("www")))
+	log.Fatal(http.ListenAndServe(":" + *port, nil))
 }
