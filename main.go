@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"io/ioutil"
+"time"
 )
 
 func main() {
@@ -44,7 +45,7 @@ func main() {
 			if cq.GameShortName != *gameShortName {
 				continue
 			}
-			u, err := url.Parse("https://dzyubspirit.github.io/QuizBot/game.html")
+			u, err := url.Parse("http://212.237.53.191:8526/game.html")
 			if err != nil {
 				log.Printf("error parsing url: %v", err)
 				continue
@@ -77,7 +78,8 @@ func main() {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		bytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			log.Printf("error reading request body: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "error reading request body: %v", err)
 			return
 		}
 		log.Printf("bytes: %s", bytes)
