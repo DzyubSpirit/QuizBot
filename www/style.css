@@ -46,6 +46,7 @@ body {
 
 .answers > div {
     padding: 25px;
+    margin: -10px;
     text-align: center;
     font: x-large 'Berkshire Swash', Helvetica, sans-serif;
     color: white;
