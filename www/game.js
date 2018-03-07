@@ -71,8 +71,8 @@ function setQuestion(ctx, question, answers, rightAnswerInd, saveResult) {
     for (let i = 0; i < aEls.length; i++) {
         aEls[i].innerText = answers[i];
         aEls[i].onclick = function () {
+            aEls[rightAnswerInd].classList.add('right-answer');
             if (i === rightAnswerInd) {
-                aEls[i].classList.add('right-answer');
                 setTimeout(() => {
                     for (const aEl of aEls) {
                         aEl.classList.remove('right-answer', 'wrong-answer');
@@ -95,13 +95,12 @@ function setQuestion(ctx, question, answers, rightAnswerInd, saveResult) {
                 if (u.searchParams.get('messageId') !== null) {
                     body['messageId'] = u.searchParams.get('messageId');
                 }
-		console.log('Body: ', JSON.stringify(body));	
                 fetch('/api/', {
                     method: 'POST',
                     body: JSON.stringify(body),
                 }).catch((...args) => {
-                     console.log('Result: ', ...args);
-		});
+                    console.log('Result: ', ...args);
+                });
             } else {
                 aEls[i].classList.add('wrong-answer');
             }
