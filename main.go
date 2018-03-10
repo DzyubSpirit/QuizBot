@@ -10,7 +10,16 @@ import (
 	"fmt"
 	"encoding/json"
 	"io/ioutil"
+	"strings"
 )
+
+var userTopics = make(map[int]string)
+
+func handleCommand(bot *tgbotapi.BotAPI, userID int, chatID int64, command string) {
+	userTopics[userID] = strings.Trim(command, "/")
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Set %q topic for game", command))
+	bot.Send(msg)
+}
 
 func callbackQuery(bot *tgbotapi.BotAPI, cq *tgbotapi.CallbackQuery) {
 	u, err := url.Parse("http://212.237.53.191:8526/game.html")
@@ -18,10 +27,17 @@ func callbackQuery(bot *tgbotapi.BotAPI, cq *tgbotapi.CallbackQuery) {
 		log.Fatalf("error parsing url: %v", err)
 	}
 
+	topicID := "ru"
+	if cq.From != nil {
+		if topic, ok := userTopics[cq.From.ID]; ok {
+			topicID = topic
+		}
+	}
+
 	q := u.Query()
 	q.Add("userId", strconv.Itoa(cq.From.ID))
 	q.Add("inlineId", cq.InlineMessageID)
-	q.Add("topicId", "en")
+	q.Add("topicId", topicID)
 	if cq.Message != nil {
 		q.Add("chatId", cq.ChatInstance)
 		q.Add("messageId", strconv.Itoa(cq.Message.MessageID))
@@ -70,6 +86,16 @@ func main() {
 		for update := range updates {
 			cq := update.CallbackQuery
 			switch {
+			case update.Message != nil && update.Message.Command() != "":
+				if update.Message.Chat == nil {
+					log.Printf("ERROR: chat is nil when message isn't")
+					continue
+				}
+				if update.Message.From == nil {
+					log.Printf("ERROR: from is nil when message isn't")
+					continue
+				}
+				handleCommand(bot, update.Message.From.ID, update.Message.Chat.ID, update.Message.Command())
 			case cq != nil && cq.GameShortName == *gameShortName:
 				callbackQuery(bot, cq)
 			default:
