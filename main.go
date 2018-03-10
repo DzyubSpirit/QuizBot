@@ -21,6 +21,7 @@ func callbackQuery(bot *tgbotapi.BotAPI, cq *tgbotapi.CallbackQuery) {
 	q := u.Query()
 	q.Add("userId", strconv.Itoa(cq.From.ID))
 	q.Add("inlineId", cq.InlineMessageID)
+	q.Add("topicId", "en")
 	if cq.Message != nil {
 		q.Add("chatId", cq.ChatInstance)
 		q.Add("messageId", strconv.Itoa(cq.Message.MessageID))
@@ -120,6 +121,7 @@ func main() {
 		}
 		fmt.Fprint(w, "Okay")
 	})
+	http.HandleFunc("/api/topics/", TopicsHandler)
 	http.Handle("/", http.FileServer(http.Dir("www")))
 	log.Fatal(http.ListenAndServe(":" + *port, nil))
 }
