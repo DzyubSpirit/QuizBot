@@ -8,7 +8,12 @@ import (
 	"fmt"
 	"encoding/json"
 	"io/ioutil"
+	"github.com/boltdb/bolt"
+	"encoding/gob"
+	"bytes"
 )
+
+
 
 func main() {
 	botToken := flag.String("bot_token", "", "token of the Telegram bot")
@@ -27,6 +32,11 @@ func main() {
 	}
 	log.Println(*gameURL)
 
+	db, err := bolt.Open("my.db", 0600, nil)
+	if err != nil {
+		log.Fatalf("error openning database my.db: %v", err)
+	}
+
 	bot, err := tgbotapi.NewBotAPI(*botToken)
 	if err != nil {
 		log.Panic(err)
@@ -37,9 +47,13 @@ func main() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates, err := bot.GetUpdatesChan(u)
+	qbot, err := NewQuizBot(bot, db, *gameURL, Topics)
+	if err != nil {
+		log.Fatalf("error creating quiz bot: %v", err)
+	}
+
 	log.Println("started bot")
 	go func() {
-		qbot := NewQuizBot(bot, *gameURL, Topics)
 		for update := range updates {
 			cq := update.CallbackQuery
 			switch {
