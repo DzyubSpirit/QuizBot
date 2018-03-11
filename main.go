@@ -4,65 +4,17 @@ import (
 	"flag"
 	"log"
 	"gopkg.in/telegram-bot-api.v4"
-	"net/url"
-	"strconv"
 	"net/http"
 	"fmt"
 	"encoding/json"
 	"io/ioutil"
-	"strings"
 )
-
-var userTopics = make(map[int]string)
-
-func handleCommand(bot *tgbotapi.BotAPI, userID int, chatID int64, command string) {
-	userTopics[userID] = strings.Trim(command, "/")
-	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Set %q topic for game", command))
-	bot.Send(msg)
-}
-
-func callbackQuery(bot *tgbotapi.BotAPI, cq *tgbotapi.CallbackQuery) {
-	u, err := url.Parse("http://212.237.53.191:8526/game.html")
-	if err != nil {
-		log.Fatalf("error parsing url: %v", err)
-	}
-
-	topicID := "ru"
-	if cq.From != nil {
-		if topic, ok := userTopics[cq.From.ID]; ok {
-			topicID = topic
-		}
-	}
-
-	q := u.Query()
-	q.Add("userId", strconv.Itoa(cq.From.ID))
-	q.Add("inlineId", cq.InlineMessageID)
-	q.Add("topicId", topicID)
-	if cq.Message != nil {
-		q.Add("chatId", cq.ChatInstance)
-		q.Add("messageId", strconv.Itoa(cq.Message.MessageID))
-	}
-	u.RawQuery = q.Encode()
-	bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{
-		CallbackQueryID: cq.ID,
-		URL:             u.String(),
-		Text:            "Hello, dear!",
-		ShowAlert:       true,
-	})
-}
-
-func sendURL(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	if update.Message == nil || update.Message.Chat == nil {
-		return
-	}
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Play the game: t.me/KICCBibleQuizBot?game=bible_quiz")
-	bot.Send(msg)
-}
 
 func main() {
 	botToken := flag.String("bot_token", "", "token of the Telegram bot")
 	gameShortName := flag.String("game_short_name", "", "short name of telegram game")
 	port := flag.String("port", "80", "port for listening score updates")
+	gameURL := flag.String("game_url", GameURLProd, "url for game web page")
 	flag.Parse()
 	if *botToken == "" {
 		log.Fatalf("should be bot_token arg for command")
@@ -70,6 +22,10 @@ func main() {
 	if *gameShortName == "" {
 		log.Fatalf("should be bot_token arg for command")
 	}
+	if *gameURL == "" {
+		log.Fatalf("should be game_url arg for command")
+	}
+	log.Println(*gameURL)
 
 	bot, err := tgbotapi.NewBotAPI(*botToken)
 	if err != nil {
@@ -83,9 +39,12 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 	log.Println("started bot")
 	go func() {
+		qbot := NewQuizBot(bot, *gameURL, Topics)
 		for update := range updates {
 			cq := update.CallbackQuery
 			switch {
+			case update.InlineQuery != nil:
+				qbot.HandleInlineQuery(update.InlineQuery)
 			case update.Message != nil && update.Message.Command() != "":
 				if update.Message.Chat == nil {
 					log.Printf("ERROR: chat is nil when message isn't")
@@ -95,11 +54,11 @@ func main() {
 					log.Printf("ERROR: from is nil when message isn't")
 					continue
 				}
-				handleCommand(bot, update.Message.From.ID, update.Message.Chat.ID, update.Message.Command())
+				qbot.HandleCommand(update.Message.From.ID, update.Message.Chat.ID, update.Message)
 			case cq != nil && cq.GameShortName == *gameShortName:
-				callbackQuery(bot, cq)
+				qbot.CallbackQuery(cq)
 			default:
-				sendURL(bot, update)
+				qbot.SendURL(update)
 			}
 		}
 	}()
@@ -147,7 +106,7 @@ func main() {
 		}
 		fmt.Fprint(w, "Okay")
 	})
-	http.HandleFunc("/api/topics/", TopicsHandler)
+	http.HandleFunc("/api/topics/", Topics.TopicsHandler)
 	http.Handle("/", http.FileServer(http.Dir("www")))
 	log.Fatal(http.ListenAndServe(":" + *port, nil))
 }
