@@ -42,6 +42,11 @@ function clearAnswersHighlighting() {
     document.getElementById('timer-bar').style.width = '100%';
 }
 
+function showRightAnswer(index) {
+    const aEls = document.getElementById("answers").children;
+    aEls[index].classList.add('right-answer');
+}
+
 function setRandomQuestion(ctx) {
     const books = ctx.topic.books;
     //["Бытие", "Исход", "Левит", "Числа", "Второзаконие", "Иисус Навин", "Судьей", "Руфь", "1 Царств", "2 Царств", "3 Царств", "4 Царств", "1 Паралипоменон", "2 Паралипоменон", "Ездра", "Неемия", "Есфирь", "Иов", "Псалтырь", "Притчи", "Екклесиаст", "Книга Песнь Песней", "Исаия", "Иеремия", "Плач Иеремии", "Иезекииль", "Даниил", "Осия", "Иоиль", "Амос", "Авдий", "Иона", "Михей", "Наум", "Аввакум", "Софония", "Аггей", "Захария", "Малахия", "Матфея", "Марка", "Луки", "Иоанна", "Деяния", "Иакова", "1 Петра", "2 Петра", "1 Иоанна", "2 Иоанна", "3 Иоанна", "Иуды", "Римлянам", "1 Коринфянам", "2 Коринфянам", "Галатам", "Ефесянам", "Филиппийцам", "Колоссянам", "1 Фессалоникийцам", "2 Фессалоникийцам", "1 Тимофею", "2 Тимофею", "Титу", "Филимону", "Евреям", "Откровение"];
@@ -60,6 +65,7 @@ function setRandomQuestion(ctx) {
     answers[rightAnswerInd] = books[rightInd];
     const timer = startTimer(3 * 60, 33, () => {
         clearAnswerOnClicks();
+        showRightAnswer(rightAnswerInd);
         setTimeout(showStartMenu, 3000);
     });
     setQuestion(ctx, books[ind], answers, rightAnswerInd, (good) => {
