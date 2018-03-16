@@ -9,11 +9,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"github.com/boltdb/bolt"
-	"encoding/gob"
-	"bytes"
 )
-
-
 
 func main() {
 	botToken := flag.String("bot_token", "", "token of the Telegram bot")
