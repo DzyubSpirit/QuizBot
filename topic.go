@@ -61,3 +61,35 @@ func (q BookAfterQuestion) ToQuestions() []Question {
 	}
 	return qs
 }
+
+type BeforeAfterQuestion struct {
+	Books    []string
+	Question string
+}
+
+func (q BeforeAfterQuestion) ToQuestions() []Question {
+	qs := make([]Question, 0, len(q.Books)*(len(q.Books)-1))
+	for i, b1 := range q.Books {
+		for j, b2 := range q.Books {
+			if i == j {
+				continue
+			}
+			if i < j {
+				qs = append(qs, Question{
+					AnswersNumber: 2,
+					WrongAnswers:  []string{"After"},
+					RightAnswer:   "Before",
+					Text:          fmt.Sprintf(q.Question, b1, b2),
+				})
+			} else {
+				qs = append(qs, Question{
+					AnswersNumber: 2,
+					WrongAnswers:  []string{"Before"},
+					RightAnswer:   "After",
+					Text:          fmt.Sprintf(q.Question, b1, b2),
+				})
+			}
+		}
+	}
+	return qs
+}
