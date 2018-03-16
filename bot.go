@@ -120,6 +120,7 @@ func NewQuizBot(botAPI *tgbotapi.BotAPI, db *bolt.DB, gameURL string, topics map
 		if err != nil {
 			return fmt.Errorf("error reading chats: %v", err)
 		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -174,7 +175,7 @@ func (bot QuizBot) HandleCommand(userID int, chatID int64, message *tgbotapi.Mes
 		} else {
 			if user, ok := bot.users[message.From.ID]; ok {
 				msgStr = fmt.Sprintf("Topic %q selected", topic)
-				ch :=  chat{topic}
+				ch := chat{topic}
 				bot.chats[user.LastChatInstance] = ch
 				err := saveChat(bot.DB, user.LastChatInstance, ch)
 				if err != nil {
@@ -197,7 +198,7 @@ func (bot QuizBot) CallbackQuery(cq *tgbotapi.CallbackQuery) {
 		log.Fatalf("error parsing url: %v", err)
 	}
 
-	topicID := "en"
+	topicID := DefaultTopic
 	if topic, ok := bot.chats[cq.ChatInstance]; ok {
 		topicID = topic.Topic
 	}
