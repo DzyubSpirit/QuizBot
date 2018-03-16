@@ -35,13 +35,12 @@ body {
 }
 
 .answers {
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     flex-direction: column;
     justify-content: center;
     width: 20em;
     margin: auto;
-    visibility: hidden;
 }
 
 .answers > div {
@@ -78,10 +77,7 @@ body {
 
 .start-button {
     display: block;
-    position: absolute;
     width: 100px;
     height: 100px;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -200%);
+    margin: 10px auto 10px auto;
 }

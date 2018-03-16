@@ -1,10 +1,15 @@
-function changeGameVisibility(visibility) {
+function showGame() {
     const question = document.getElementsByClassName("question")[0];
+    question.style.visibility = 'visible';
     const answer = document.getElementsByClassName("answers")[0];
-    const els = [question, answer];
-    for (const el of els) {
-        el.style.visibility = visibility;
-    }
+    answer.style.display = 'flex';
+}
+
+function hideGame() {
+    const question = document.getElementsByClassName("question")[0];
+    question.style.visibility = 'hidden';
+    const answer = document.getElementsByClassName("answers")[0];
+    answer.style.display = 'none';
 }
 
 function startTimer(maxSteps, stepTime, onTimeout) {
@@ -115,9 +120,9 @@ function setQuestion(ctx, question, answers, rightAnswerInd, saveResult) {
 
 function showStartMenu() {
     clearAnswersHighlighting();
-    changeGameVisibility('hidden');
+    hideGame();
     const startButton = document.getElementById("start-button");
-    startButton.style.visibility = 'visible';
+    startButton.style.display = 'block';
 }
 
 window.addEventListener('load', () => {
@@ -129,10 +134,10 @@ window.addEventListener('load', () => {
         startButton.addEventListener('click', () => {
             let ctx = {score: 0, topic};
             console.log(topic);
-            startButton.style.visibility = 'hidden';
+            startButton.style.display = 'none';
             document.getElementById("score").innerText = '0';
             setRandomQuestion(ctx);
-            changeGameVisibility('visible');
+            showGame();
         });
         showStartMenu();
     }).catch(console.log);
