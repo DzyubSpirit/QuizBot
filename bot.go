@@ -9,11 +9,19 @@ import (
 	"fmt"
 	"github.com/boltdb/bolt"
 	"encoding/gob"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
 )
 
+type topic = string
 type chat struct {
-	Topic string
+	Topic   topic
+	Ratings map[topic]rating
 }
+
+type userID = int
+type rating map[userID]int
 
 type user struct {
 	LastChatInstance string
@@ -25,12 +33,12 @@ type QuizBot struct {
 	GameURL string
 	Topics  TopicsMap
 
-	chats map[string]chat
-	users map[int]user
+	chats map[string]*chat
+	users map[int]*user
 }
 
-func readUsers(tx *bolt.Tx) (map[int]user, error) {
-	users := make(map[int]user)
+func readUsers(tx *bolt.Tx) (map[int]*user, error) {
+	users := make(map[int]*user)
 	b, err := tx.CreateBucketIfNotExists([]byte("users"))
 	if err != nil {
 		return nil, fmt.Errorf("error creating bucket: %v", err)
@@ -48,13 +56,13 @@ func readUsers(tx *bolt.Tx) (map[int]user, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error unmarshaling user: %v", err)
 		}
-		users[kInt] = u
+		users[kInt] = &u
 	}
 	return users, nil
 }
 
-func readChats(tx *bolt.Tx) (map[string]chat, error) {
-	chats := make(map[string]chat)
+func readChats(tx *bolt.Tx) (map[string]*chat, error) {
+	chats := make(map[string]*chat)
 	b, err := tx.CreateBucketIfNotExists([]byte("chats"))
 	if err != nil {
 		return nil, fmt.Errorf("error creating bucket: %v", err)
@@ -66,7 +74,7 @@ func readChats(tx *bolt.Tx) (map[string]chat, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error unmarshaling chat: %v", err)
 		}
-		chats[string(k)] = ch
+		chats[string(k)] = &ch
 	}
 	return chats, nil
 }
@@ -107,8 +115,8 @@ func saveChat(db *bolt.DB, id string, ch chat) error {
 }
 
 func NewQuizBot(botAPI *tgbotapi.BotAPI, db *bolt.DB, gameURL string, topics map[string]Topic) (*QuizBot, error) {
-	var users map[int]user
-	var chats map[string]chat
+	var users map[int]*user
+	var chats map[string]*chat
 	err := db.Update(func(tx *bolt.Tx) error {
 		var err error
 		users, err = readUsers(tx)
@@ -169,23 +177,46 @@ func (bot QuizBot) HandleCommand(userID int, chatID int64, message *tgbotapi.Mes
 		bot.Send(msg)
 	case "topic":
 		topic := message.CommandArguments()
-		var msgStr string
 		if _, ok := bot.Topics[topic]; !ok {
-			msgStr = "Unknown topic"
-		} else {
-			if user, ok := bot.users[message.From.ID]; ok {
-				msgStr = fmt.Sprintf("Topic %q selected", topic)
-				ch := chat{topic}
-				bot.chats[user.LastChatInstance] = ch
-				err := saveChat(bot.DB, user.LastChatInstance, ch)
-				if err != nil {
-					log.Printf("error saving chat: %v", err)
-				}
-			} else {
-				msgStr = fmt.Sprintf("Play the game and then change topic")
-			}
+			bot.Send(tgbotapi.NewMessage(chatID, "Unknown topic"))
+			return
+		}
+		user, ok := bot.users[message.From.ID]
+		if !ok {
+			bot.Send(tgbotapi.NewMessage(chatID, "Play the game and then change topic"))
+			return
+		}
+
+		msgStr := fmt.Sprintf("Topic %q selected", topic)
+		lastTopic := bot.chats[user.LastChatInstance].Topic
+		chat := bot.chats[user.LastChatInstance]
+		chat.Topic = topic
+		err := saveChat(bot.DB, user.LastChatInstance, *bot.chats[user.LastChatInstance])
+		if err != nil {
+			log.Printf("error saving chat: %v", err)
 		}
 		bot.Send(tgbotapi.NewMessage(chatID, msgStr))
+
+		update := make(map[userID]int, len(chat.Ratings[lastTopic]))
+		for id := range chat.Ratings[lastTopic] {
+			update[id] = 0
+		}
+		for id, score := range chat.Ratings[topic] {
+			update[id] = score
+		}
+		chatID, err := strconv.ParseInt(user.LastChatInstance, 10, 64)
+		if err != nil {
+			log.Printf("ERROR: can't parse chat instance %q: %v", user.LastChatInstance, err)
+			return
+		}
+		for id, score := range update {
+			bot.Send(tgbotapi.SetGameScoreConfig{
+				Score:  score,
+				UserID: id,
+				ChatID: int(chatID),
+				Force:  true,
+			})
+		}
 	default:
 		msg := tgbotapi.NewMessage(chatID, "Unknown command")
 		bot.Send(msg)
@@ -203,7 +234,7 @@ func (bot QuizBot) CallbackQuery(cq *tgbotapi.CallbackQuery) {
 		topicID = topic.Topic
 	}
 	us := user{cq.ChatInstance}
-	bot.users[cq.From.ID] = us
+	bot.users[cq.From.ID] = &us
 	err = saveUser(bot.DB, cq.From.ID, us)
 	if err != nil {
 		log.Printf("error saving user to bolt: %v", err)
@@ -241,4 +272,67 @@ func (bot QuizBot) SendURL(update tgbotapi.Update) {
 	}
 	//msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Play the game: t.me/KICCBibleQuizBot?game=bible_quiz")
 	bot.Send(msg)
+}
+
+type ScoreResult struct {
+	UserID    int
+	InlineID  string
+	ChatID    string
+	MessageID int
+	Score     int
+}
+
+func (bot QuizBot) SetScore(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	byt, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "error reading request body: %v", err)
+		return
+	}
+	log.Printf("bytes: %s", byt)
+	var sr ScoreResult
+	err = json.Unmarshal(byt, &sr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println(w, "error parsing score result: %v", err)
+		return
+	}
+
+	chat := bot.chats[sr.ChatID]
+	if sr.Score <= chat.Ratings[chat.Topic][sr.UserID] {
+		fmt.Fprint(w, "Okay")
+		return
+	}
+
+	chat.Ratings[chat.Topic][sr.UserID] = sr.Score
+	err = saveChat(bot.DB, sr.ChatID, *chat)
+	if err != nil {
+		log.Printf("ERROR: can't save chat: %v", err)
+	}
+
+	cfg := tgbotapi.SetGameScoreConfig{
+		Score:  sr.Score,
+		UserID: sr.UserID,
+	}
+	if sr.InlineID != "" {
+		cfg.InlineMessageID = sr.InlineID
+	}
+	if sr.ChatID != "" {
+		chatID, err := strconv.ParseInt(sr.ChatID, 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Printf("ERROR: can't parse chat instance when saving score")
+			return
+		}
+		cfg.ChatID = int(chatID)
+		cfg.MessageID = sr.MessageID
+	}
+	_, err = bot.Send(cfg)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("error updating user score for scoreresult %v, err: %v", sr, err)
+		return
+	}
+	fmt.Fprint(w, "Okay")
 }

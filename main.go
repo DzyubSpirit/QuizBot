@@ -5,9 +5,6 @@ import (
 	"log"
 	"gopkg.in/telegram-bot-api.v4"
 	"net/http"
-	"fmt"
-	"encoding/json"
-	"io/ioutil"
 	"github.com/boltdb/bolt"
 )
 
@@ -73,49 +70,7 @@ func main() {
 		}
 	}()
 
-	type ScoreResult struct {
-		UserID    int
-		InlineID  string
-		ChatID    int
-		MessageID int
-		Score     int
-	}
-	http.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		bytes, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "error reading request body: %v", err)
-			return
-		}
-		log.Printf("bytes: %s", bytes)
-		var sr ScoreResult
-		err = json.Unmarshal(bytes, &sr)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Println(w, "error parsing score result: %v", err)
-			return
-		}
-
-		cfg := tgbotapi.SetGameScoreConfig{
-			Score:  sr.Score,
-			UserID: sr.UserID,
-		}
-		if sr.InlineID != "" {
-			cfg.InlineMessageID = sr.InlineID
-		}
-		if sr.ChatID != 0 {
-			cfg.ChatID = sr.ChatID
-			cfg.MessageID = sr.MessageID
-		}
-		_, err = bot.Send(cfg)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.Printf("error updating user score for scoreresult %v, err: %v", sr, err)
-			return
-		}
-		fmt.Fprint(w, "Okay")
-	})
+	http.HandleFunc("/api/", qbot.SetScore)
 	http.HandleFunc("/api/topics/", Topics.TopicsHandler)
 	http.Handle("/", http.FileServer(http.Dir("www")))
 	log.Fatal(http.ListenAndServe(":" + *port, nil))
