@@ -306,6 +306,9 @@ func (bot QuizBot) SetScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if chat.Ratings[chat.Topic] == nil {
+		chat.Ratings[chat.Topic] = make(map[userID]int)
+	}
 	chat.Ratings[chat.Topic][sr.UserID] = sr.Score
 	err = saveChat(bot.DB, sr.ChatID, *chat)
 	if err != nil {
