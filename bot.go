@@ -1,17 +1,18 @@
 package main
 
 import (
-	"net/url"
-	"strconv"
-	"log"
-	"gopkg.in/telegram-bot-api.v4"
 	"bytes"
-	"fmt"
-	"github.com/boltdb/bolt"
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
+	"strconv"
+
+	"github.com/boltdb/bolt"
+	"gopkg.in/telegram-bot-api.v4"
 )
 
 type topic = string
@@ -163,7 +164,7 @@ func (bot QuizBot) HandleInlineQuery(query *tgbotapi.InlineQuery) {
 	})
 }
 
-func (bot QuizBot) HandleCommand(userID int, chatID int64, message *tgbotapi.Message) {
+func (bot QuizBot) HandleCommand(id userID, chatID int64, message *tgbotapi.Message) {
 	command := message.Command()
 	switch command {
 	case "topics":
