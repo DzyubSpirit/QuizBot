@@ -300,15 +300,19 @@ func (bot QuizBot) SetScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if bot.chats[sr.ChatID] == nil {
+		bot.chats[sr.ChatID] = new(chat)
+		bot.chats[sr.ChatID].Ratings = make(map[string]rating)
+	}
 	chat := bot.chats[sr.ChatID]
+	if chat.Ratings[chat.Topic] == nil {
+		chat.Ratings[chat.Topic] = make(map[userID]int)
+	}
 	if sr.Score <= chat.Ratings[chat.Topic][sr.UserID] {
 		fmt.Fprint(w, "Okay")
 		return
 	}
 
-	if chat.Ratings[chat.Topic] == nil {
-		chat.Ratings[chat.Topic] = make(map[userID]int)
-	}
 	chat.Ratings[chat.Topic][sr.UserID] = sr.Score
 	err = saveChat(bot.DB, sr.ChatID, *chat)
 	if err != nil {
