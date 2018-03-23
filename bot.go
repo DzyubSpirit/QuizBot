@@ -216,7 +216,7 @@ func (bot QuizBot) SetTopic(chatID int64, fromID int, topic string) {
 	log.Printf("topic rating: %v", chat.Ratings[topic])
 	update := make(map[UserID]int, len(chat.Ratings[lastTopic]))
 	for id := range chat.Ratings[lastTopic] {
-		update[id] = 0
+		update[id] = 1
 	}
 	for id, score := range chat.Ratings[topic] {
 		update[id] = score
@@ -320,16 +320,12 @@ func (bot QuizBot) SetScore(sr ScoreResult) (int, error) {
 	}
 	chat := bot.Chats[sr.ChatID]
 	if chat.Ratings[chat.Topic] == nil {
-		log.Printf("chat: %v", chat)
-		log.Printf("rating: %v", chat.Ratings)
-		log.Printf("rating with %q: %v", chat.Topic, chat.Ratings[chat.Topic])
 		chat.Ratings[chat.Topic] = make(Rating)
 	}
 	if sr.Score <= chat.Ratings[chat.Topic][sr.UserID] {
 		return chat.Ratings[chat.Topic][sr.UserID], nil
 	}
 
-	log.Printf("user: %v", chat.Ratings[chat.Topic][sr.UserID])
 	chat.Ratings[chat.Topic][sr.UserID] = sr.Score
 	log.Printf("rating for %q: %v", chat.Topic, chat.Ratings[chat.Topic])
 	err := saveChat(bot.DB, sr.ChatID, *chat)
