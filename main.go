@@ -26,7 +26,8 @@ func main() {
 	}
 	if *gameShortName == "" {
 		log.Fatalf("should be bot_token arg for command")
-	} if *gameURL == "" {
+	}
+	if *gameURL == "" {
 		log.Fatalf("should be game_url arg for command")
 	}
 	log.Println(*gameURL)
