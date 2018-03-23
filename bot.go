@@ -326,7 +326,8 @@ func (bot QuizBot) SetScore(sr ScoreResult) (int, error) {
 		return chat.Ratings[chat.Topic][sr.UserID], nil
 	}
 
-	chat.Ratings[chat.Topic][sr.UserID] = sr.Score
+	log.Printf("user: %v", chat.Ratings[chat.Topic][sr.UserID])
+	//chat.Ratings[chat.Topic][sr.UserID] = sr.Score
 	log.Printf("rating for %q: %v", chat.Topic, chat.Ratings[chat.Topic])
 	err := saveChat(bot.DB, sr.ChatID, *chat)
 	if err != nil {
