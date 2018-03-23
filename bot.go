@@ -271,10 +271,10 @@ func (bot QuizBot) CallbackQuery(cq *tgbotapi.CallbackQuery) {
 	q := u.Query()
 	q.Add("userId", strconv.Itoa(cq.From.ID))
 	q.Add("topicId", topicID)
+	q.Add("chatId", cq.ChatInstance)
 	q.Add("inlineId", cq.InlineMessageID)
 	log.Printf("inlinceId: %v\n", cq.InlineMessageID)
 	if cq.Message != nil {
-		q.Add("chatId", cq.ChatInstance)
 		q.Add("messageId", strconv.Itoa(cq.Message.MessageID))
 		log.Printf("chatId: %v", cq.ChatInstance)
 		log.Printf("messageId: %v", cq.Message.MessageID)
