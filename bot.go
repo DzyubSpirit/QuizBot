@@ -316,9 +316,10 @@ func (bot QuizBot) SetScore(sr ScoreResult) (int, error) {
 		log.Printf("created: %v", bot.Chats[sr.ChatID])
 	}
 	chat := bot.Chats[sr.ChatID]
-	log.Printf("chat: %v", chat)
-	log.Printf("rating: %v", chat.Ratings)
 	if chat.Ratings[chat.Topic] == nil {
+		log.Printf("chat: %v", chat)
+		log.Printf("rating: %v", chat.Ratings)
+		log.Printf("rating with %q: %v", chat.Topic, chat.Ratings[chat.Topic])
 		chat.Ratings[chat.Topic] = make(map[UserID]int)
 	}
 	if sr.Score <= chat.Ratings[chat.Topic][sr.UserID] {
