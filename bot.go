@@ -261,6 +261,10 @@ func (bot QuizBot) CallbackQuery(cq *tgbotapi.CallbackQuery) {
 	if topic, ok := bot.Chats[cq.ChatInstance]; ok {
 		topicID = topic.Topic
 	}
+	if cq.Message != nil {
+		log.Printf("MessageID: ", cq.Message.MessageID)
+	}
+	log.Printf("InlineMessageID: %q", cq.InlineMessageID)
 	us := User{cq.ChatInstance, cq.Message.MessageID}
 	bot.Users[cq.From.ID] = &us
 	err = saveUser(bot.DB, cq.From.ID, us)
