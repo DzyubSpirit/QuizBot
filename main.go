@@ -8,6 +8,13 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+type BotAPI interface {
+	GetUpdatesChan(tgbotapi.UpdateConfig) (tgbotapi.UpdatesChannel, error)
+	AnswerInlineQuery(config tgbotapi.InlineConfig) (tgbotapi.APIResponse, error)
+	AnswerCallbackQuery(config tgbotapi.CallbackConfig) (tgbotapi.APIResponse, error)
+	Send(c tgbotapi.Chattable) (tgbotapi.Message, error)
+}
+
 func main() {
 	botToken := flag.String("bot_token", "", "token of the Telegram bot")
 	gameShortName := flag.String("game_short_name", "", "short name of telegram game")
@@ -30,47 +37,31 @@ func main() {
 		log.Fatalf("error openning database my.db: %v", err)
 	}
 
-	bot, err := tgbotapi.NewBotAPI(*botToken)
+	tgbot, err := tgbotapi.NewBotAPI(*botToken)
+	tgbot.Debug = true
+	var bot BotAPI
+	bot = tgbot
 	if err != nil {
-		log.Panic(err)
+		log.Fatalf("error creating new bot api: %v", err)
 	}
 
-	bot.Debug = true
-
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-	updates, err := bot.GetUpdatesChan(u)
-	qbot, err := NewQuizBot(bot, db, *gameURL, Topics)
+	qbot, err := NewQuizBot(bot, db, *gameURL, *gameShortName, Topics)
 	if err != nil {
 		log.Fatalf("error creating quiz bot: %v", err)
 	}
 
 	log.Println("started bot")
+	errs, err := qbot.ListenUpdates()
+	if err != nil {
+		log.Fatalf("error starting listening for telegram bot updates: %v", err)
+	}
 	go func() {
-		for update := range updates {
-			cq := update.CallbackQuery
-			switch {
-			case update.InlineQuery != nil:
-				qbot.HandleInlineQuery(update.InlineQuery)
-			case update.Message != nil && update.Message.Command() != "":
-				if update.Message.Chat == nil {
-					log.Printf("ERROR: chat is nil when message isn't")
-					continue
-				}
-				if update.Message.From == nil {
-					log.Printf("ERROR: from is nil when message isn't")
-					continue
-				}
-				qbot.HandleCommand(update.Message.From.ID, update.Message.Chat.ID, update.Message)
-			case cq != nil && cq.GameShortName == *gameShortName:
-				qbot.CallbackQuery(cq)
-			default:
-				qbot.SendURL(update)
-			}
+		for err := range errs {
+			log.Printf("ERROR: listening updates: %v", err)
 		}
 	}()
 
-	http.HandleFunc("/api/", qbot.SetScore)
+	http.HandleFunc("/api/", qbot.HandleSetScore)
 	http.HandleFunc("/api/topics/", Topics.TopicsHandler)
 	http.Handle("/", http.FileServer(http.Dir("www")))
 	log.Fatal(http.ListenAndServe(":" + *port, nil))
