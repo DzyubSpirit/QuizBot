@@ -315,19 +315,22 @@ func (bot QuizBot) SetScore(sr ScoreResult) (int, error) {
 		bot.Chats[sr.ChatID] = &Chat{DefaultTopic, make(map[TopicName]Rating)}
 		log.Printf("created: %v", bot.Chats[sr.ChatID])
 	}
+	if bot.Chats[sr.ChatID].Ratings == nil {
+		bot.Chats[sr.ChatID].Ratings = make(map[TopicName]Rating)
+	}
 	chat := bot.Chats[sr.ChatID]
 	if chat.Ratings[chat.Topic] == nil {
 		log.Printf("chat: %v", chat)
 		log.Printf("rating: %v", chat.Ratings)
 		log.Printf("rating with %q: %v", chat.Topic, chat.Ratings[chat.Topic])
-		//chat.Ratings[chat.Topic] = make(Rating)
+		chat.Ratings[chat.Topic] = make(Rating)
 	}
 	if sr.Score <= chat.Ratings[chat.Topic][sr.UserID] {
 		return chat.Ratings[chat.Topic][sr.UserID], nil
 	}
 
 	log.Printf("user: %v", chat.Ratings[chat.Topic][sr.UserID])
-	//chat.Ratings[chat.Topic][sr.UserID] = sr.Score
+	chat.Ratings[chat.Topic][sr.UserID] = sr.Score
 	log.Printf("rating for %q: %v", chat.Topic, chat.Ratings[chat.Topic])
 	err := saveChat(bot.DB, sr.ChatID, *chat)
 	if err != nil {
