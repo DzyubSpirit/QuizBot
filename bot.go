@@ -24,7 +24,7 @@ type Chat struct {
 }
 
 type UserID = int
-type Rating map[UserID]int
+type Rating = map[UserID]int
 
 type User struct {
 	LastChatInstance    string
