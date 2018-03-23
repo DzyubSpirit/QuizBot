@@ -320,7 +320,7 @@ func (bot QuizBot) SetScore(sr ScoreResult) (int, error) {
 		log.Printf("chat: %v", chat)
 		log.Printf("rating: %v", chat.Ratings)
 		log.Printf("rating with %q: %v", chat.Topic, chat.Ratings[chat.Topic])
-		chat.Ratings[chat.Topic] = make(map[UserID]int)
+		chat.Ratings[chat.Topic] = make(Rating)
 	}
 	if sr.Score <= chat.Ratings[chat.Topic][sr.UserID] {
 		return chat.Ratings[chat.Topic][sr.UserID], nil
