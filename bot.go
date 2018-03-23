@@ -313,8 +313,10 @@ type ScoreResult struct {
 func (bot QuizBot) SetScore(sr ScoreResult) (int, error) {
 	if bot.Chats[sr.ChatID] == nil {
 		bot.Chats[sr.ChatID] = &Chat{DefaultTopic, make(map[string]Rating)}
+		log.Printf("created: %v", bot.Chats[sr.ChatID])
 	}
 	chat := bot.Chats[sr.ChatID]
+	log.Printf("chat: %v", bot.Chats[sr.ChatID])
 	if chat.Ratings[chat.Topic] == nil {
 		chat.Ratings[chat.Topic] = make(map[UserID]int)
 	}
