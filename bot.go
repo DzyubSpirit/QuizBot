@@ -27,8 +27,8 @@ type UserID = int
 type Rating map[UserID]int
 
 type User struct {
-	LastChatInstance string
-	LastMessageID    int
+	LastChatInstance    string
+	LastInlineMessageID string
 }
 
 type DB interface {
@@ -228,11 +228,11 @@ func (bot QuizBot) SetTopic(chatID int64, fromID int, topic string) {
 	}
 	for id, score := range update {
 		bot.Send(tgbotapi.SetGameScoreConfig{
-			Score:     score,
-			UserID:    id,
-			ChatID:    int(gameChatID),
-			MessageID: user.LastMessageID,
-			Force:     true,
+			Score:           score,
+			UserID:          id,
+			ChatID:          int(gameChatID),
+			InlineMessageID: user.LastInlineMessageID,
+			Force:           true,
 		})
 	}
 }
@@ -261,11 +261,7 @@ func (bot QuizBot) CallbackQuery(cq *tgbotapi.CallbackQuery) {
 	if topic, ok := bot.Chats[cq.ChatInstance]; ok {
 		topicID = topic.Topic
 	}
-	if cq.Message != nil {
-		log.Printf("MessageID: ", cq.Message.MessageID)
-	}
-	log.Printf("InlineMessageID: %q", cq.InlineMessageID)
-	us := User{cq.ChatInstance, cq.Message.MessageID}
+	us := User{cq.ChatInstance, cq.InlineMessageID}
 	bot.Users[cq.From.ID] = &us
 	err = saveUser(bot.DB, cq.From.ID, us)
 	if err != nil {
