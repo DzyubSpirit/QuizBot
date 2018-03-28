@@ -37,7 +37,7 @@ type DB interface {
 
 type QuizBot struct {
 	BotAPI
-	DB            DB //*bolt.DB
+	DB
 	GameURL       string
 	GameShortName string
 	Topics        TopicsMap
